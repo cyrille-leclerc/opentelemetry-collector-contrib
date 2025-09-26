@@ -537,7 +537,11 @@ func (p *connectorImp) buildAttributes(
 		attr.PutStr(serviceNameKey, serviceName)
 	}
 	if !contains(p.config.ExcludeDimensions, spanNameKey) {
-		attr.PutStr(spanNameKey, span.Name())
+		spanName := span.Name()
+		if (useSemConvSpanName){
+			spanName = ...
+		}
+		attr.PutStr(spanNameKey, spanName)
 	}
 	if !contains(p.config.ExcludeDimensions, spanKindKey) {
 		attr.PutStr(spanKindKey, traceutil.SpanKindStr(span.Kind()))
@@ -590,7 +594,11 @@ func (p *connectorImp) buildKey(serviceName string, span ptrace.Span, optionalDi
 		concatDimensionValue(p.keyBuf, serviceName, false)
 	}
 	if !contains(p.config.ExcludeDimensions, spanNameKey) {
-		concatDimensionValue(p.keyBuf, span.Name(), true)
+		var name = span.Name()
+		if use_sem_conv() {
+			name = inferSpanNameFromSemConv(span)
+		}
+		concatDimensionValue(p.keyBuf, name, true)
 	}
 	if !contains(p.config.ExcludeDimensions, spanKindKey) {
 		concatDimensionValue(p.keyBuf, traceutil.SpanKindStr(span.Kind()), true)
@@ -606,6 +614,12 @@ func (p *connectorImp) buildKey(serviceName string, span ptrace.Span, optionalDi
 	}
 
 	return metrics.Key(p.keyBuf.String())
+}
+
+func inferSpanNameFromSemConv(span ptrace.Span) string {
+	// span is sem conv compliant
+	// return sem conv conv span name
+	// bonus: else infer span name from smart span name sanitizer heuristic
 }
 
 // buildMetricName builds the namespace prefix for the metric name.
